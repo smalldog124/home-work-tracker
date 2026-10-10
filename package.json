@@ -1,0 +1,12 @@
+{
+  "name": "homw-work-tracker",
+  "version": "1.0.0",
+  "description": "A Thai web app for teachers to record student work with QR codes. Teachers sign in with Google. Students do not need accounts.",
+  "license": "ISC",
+  "author": "smalldoc",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
