@@ -1,0 +1,16 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { delimiter, resolve } from 'node:path';
+import { spawn } from 'node:child_process';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const localJava = resolve(root, '.tools/java21/Contents/Home/bin');
+const env = { ...process.env };
+if (existsSync(resolve(localJava, 'java'))) env.PATH = `${localJava}${delimiter}${env.PATH}`;
+const mode = process.argv[2];
+if (!['start', 'test'].includes(mode)) throw new Error('Expected start or test');
+const args = ['emulators:' + (mode === 'test' ? 'exec' : 'start'), '--project', 'demo-home-work', '--only', 'auth,firestore,functions'];
+if (mode === 'test') args.push('npm run test:integration -w functions && vitest run --config tests/security/vitest.config.mts');
+const child = spawn(resolve(root, 'node_modules/.bin/firebase'), args, { cwd: root, env, stdio: 'inherit' });
+child.on('error', error => { console.error(error.message); process.exitCode = 1; });
+child.on('exit', (code, signal) => { process.exitCode = code ?? (signal ? 1 : 0); });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal));

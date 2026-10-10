@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) {
+      return request.auth != null && request.auth.uid == uid && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    function currentYear() {
+      let thai = request.time + duration.value(7, 'h');
+      return thai.year() + 543 - (thai.month() < 5 ? 1 : 0);
+    }
+    function retained(year) { return year >= currentYear() - 2 && year <= currentYear(); }
+    function validClass(uid, cid) {
+      return owner(uid) && retained(get(/databases/$(database)/documents/teachers/$(uid)/classes/$(cid)).data.year);
+    }
+    match /teachers/{uid} {
+      allow read: if owner(uid);
+      allow write: if false;
+      match /subjects/{id} { allow read: if owner(uid); allow write: if false; }
+      match /classes/{cid} {
+        allow read: if owner(uid) && retained(resource.data.year);
+        allow write: if false;
+        match /students/{id} { allow read: if validClass(uid, cid); allow write: if false; }
+        match /tasks/{id} { allow read: if validClass(uid, cid); allow write: if false; }
+        match /work/{id} { allow read: if validClass(uid, cid); allow write: if false; }
+        match /workVersions/{id} { allow read, write: if false; }
+      }
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

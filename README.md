@@ -11,7 +11,7 @@ A Thai web app for teachers to record student work with QR codes. Teachers sign 
 
 This README owns technology choices and file placement. `plan.md` owns product behavior and backend requirements. [requiremen.txt](requiremen.txt) holds the original requirements. Explicit user instructions take priority; update the affected document when a decision changes.
 
-The repository currently contains planning documents. The tree below is the target layout, not a list of files already built. Create folders as their features are implemented.
+The backend, shared contracts, Firestore Rules, and backend tests are implemented. The frontend remains planned. The tree below includes the target frontend layout; create UI folders when those features are implemented. See [docs/backend.md](docs/backend.md) for the callable contract and [docs/deployment.md](docs/deployment.md) for working commands.
 
 ## Tech Stack
 
@@ -235,7 +235,18 @@ Test the changed behavior beside the service. Check the full browser flow in E2E
 
 ## Setup and Maintenance
 
-During scaffolding, add root npm scripts for development, Emulators, type checking, tests, and build. Document the actual working commands here after the scripts exist; this planning README does not claim they are available yet.
+Current backend commands:
+
+```bash
+npm ci
+npm run build
+npm run typecheck
+npm run test:functions
+npm run test:integration
+npm run emulators
+```
+
+Integration tests require Java 21 and use a local demo Firebase project. `npm test` runs backend unit tests. `test:e2e:p0` and `test:e2e:p1` select browser suites, which still require the future UI/harness. The build generates `functions/deploy/` as the Firebase upload source, bundling shared runtime contracts so deployment never depends on a sibling workspace. Production packaging and prerequisites are documented in [docs/deployment.md](docs/deployment.md).
 
 Keep setup and deployment steps in `docs/deployment.md`, and recovery steps in `docs/recovery.md`. Record required environment-variable names without secret values. Keep generated build output and local credentials out of version control.
 

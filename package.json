@@ -7,24 +7,38 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "npm run test:e2e",
+    "test": "npm run test:functions",
     "test:e2e": "playwright test",
     "test:e2e:p0": "playwright test --grep @P0",
     "test:e2e:p1": "playwright test --grep @P1",
     "test:e2e:list": "playwright test --list",
     "test:e2e:types": "tsc -p tests/e2e/tsconfig.json",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "build": "npm run build -w shared && npm run build -w functions && node scripts/prepare-functions.mjs",
+    "typecheck": "npm run build -w shared && npm run typecheck -w functions && npm run test:e2e:types",
+    "test:functions": "npm run build -w shared && npm run test -w functions",
+    "test:integration": "npm run build && node scripts/emulators.mjs test",
+    "emulators": "npm run build && node scripts/emulators.mjs start",
+    "package:functions": "npm run build && npm install --package-lock-only --ignore-scripts --prefix functions/deploy"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@playwright/test": "^1.64.0",
     "@types/node": "^26.6.5",
     "@types/pngjs": "^6.0.5",
     "@types/qrcode": "^1.5.6",
     "exceljs": "^4.4.0",
+    "firebase": "^12.19.0",
+    "firebase-tools": "^15.33.0",
     "jsqr": "^1.4.0",
     "pdf-lib": "^1.17.1",
     "pngjs": "^7.0.0",
     "qrcode": "^1.5.4",
-    "typescript": "^7.0.2"
-  }
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "workspaces": [
+    "functions",
+    "shared"
+  ]
 }

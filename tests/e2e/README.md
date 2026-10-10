@@ -1,0 +1,11 @@
+# Browser E2E status
+
+E01–E15 use `@P0`; E16–E23 use `@P1`. They expand into 51 browser tests. Run `npm run test:e2e:p0`, `npm run test:e2e:p1`, or `npm run test:e2e:list`. Append `-- --list` to preview a selected priority without starting a browser.
+
+The repository has no frontend yet. These are acceptance tests with provisional Thai labels, routes and `data-testid` selectors, not tests validated against a working UI. The backend is separately tested with Vitest and Emulators. Browser tests intentionally fail prerequisite checks rather than skip or mock successful saves.
+
+Before running against a future UI, implement the local-only harness expected in `support/fixtures.ts`: `/__e2e/health`, `seed`, `snapshot`, `clock`, `fault`, and `qr` at `E2E_HARNESS_URL` (default `http://127.0.0.1:4400`). Health must identify an Emulator-only `demo-` project. Seed atomically resets test data and returns deterministic QR payloads plus a replaced QR. Snapshot projects real backend records into the types in `support/data.ts`. Clock and fault controls apply to actual service execution; before-commit faults prevent a commit, after-commit faults lose its reply, hold-response faults delay its real reply, and release removes faults. These controls are not implemented by the current backend and must never exist in a production build.
+
+`E2E_BASE_URL` defaults to `http://127.0.0.1:5173`. Only loopback app/harness URLs are accepted. A test-only Google sign-in adapter selects the seeded teacher with `/sign-in?e2eTeacher=...`; it must obtain a Google-provider identity from Auth Emulator and use real Firebase session persistence. Production must ignore this parameter. The camera fixture supplies QR pixels through `getUserMedia` so the actual QR reader remains under test. Audio playback is observed by the fixture; real audio audibility needs device checks.
+
+Validate and adjust selectors against the future UI. Real Google OAuth, iPhone/Android camera behavior, background/resume events, printed QR readability and the full PDF 4×5 card layout require additional device/print checks. The current PDF test checks A4 page dimensions, pagination, an embedded font and individual PNG QR decoding; it does not prove the contents or geometry of every PDF card.

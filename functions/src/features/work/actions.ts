@@ -1,0 +1,10 @@
+import { scanSchema, pastWorkSchema, changeWorkSchema, getWorkSchema, resultSchema } from '@home-work/shared';
+import { action } from '../../lib/action';
+import { context } from '../../lib/firebase-admin';
+import { saveWork, savePastWork, changeWorkStatus, getWork } from './service';
+import { getRequestResult } from '../../services/request-results';
+export const saveWorkAction = action('saveWork', scanSchema, (uid, input) => saveWork(context, uid, input));
+export const savePastWorkAction = action('savePastWork', pastWorkSchema, (uid, input) => savePastWork(context, uid, input));
+export const changeWorkStatusAction = action('changeWorkStatus', changeWorkSchema, (uid, input) => changeWorkStatus(context, uid, input));
+export const getWorkAction = action('getWork', getWorkSchema, (uid, input) => getWork(context, uid, input));
+export const getRequestResultAction = action('getRequestResult', resultSchema, (uid, input) => getRequestResult(context, uid, input.requestId));
