@@ -195,12 +195,15 @@ it('task and student IDs from another class are rejected', async () => {
   await expect(changeWorkStatus(ctx, uid, { ...workInput(), studentId: student.id })).rejects.toMatchObject({ code: 'not-found' });
 });
 it('expiry rejects reads/writes/replays before cleanup and removes children, QR, requests and audit', async () => {
-  setNow('2026-04-30T16:59:59.000Z');
+  // Create while this is the current year; retained past years are no longer creation inputs.
+  setNow('2023-05-01T05:00:00.000Z');
   const old = await createClass(ctx, uid, { requestId: rid(), year: 2566, term: 1, subject: 'เก่า', group: 'เก่า' });
   const student = await addStudent(ctx, uid, { requestId: rid(), classId: old.classId, number: 1, name: 'เก่า' });
   const task = await createTask(ctx, uid, { requestId: rid(), classId: old.classId });
   const qr = (await getQrData(ctx, uid, old.classId)).cards[0].payload;
   const input = { ...scanInput(), payload: qr }; await saveWork(ctx, uid, input);
+  setNow('2026-04-30T16:59:59.000Z');
+  await expect(resolveQr(ctx, uid, qr)).resolves.toHaveProperty('student');
   setNow('2026-04-30T17:00:00.000Z');
   await expect(resolveQr(ctx, uid, qr)).rejects.toMatchObject({ details: { reason: 'YEAR_UNAVAILABLE' } });
   await expect(saveWork(ctx, uid, input)).rejects.toMatchObject({ details: { reason: 'YEAR_UNAVAILABLE' } });

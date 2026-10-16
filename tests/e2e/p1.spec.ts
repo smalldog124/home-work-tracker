@@ -1,5 +1,5 @@
 import { test, expect, App, installCamera } from './support/fixtures';
-import { baseline, NOW } from './support/data';
+import { baseline, NOW, type Seed } from './support/data';
 import { PDFDocument, PDFName, PDFDict } from 'pdf-lib';
 import { PNG } from 'pngjs';
 import jsQR from 'jsqr';
@@ -13,6 +13,10 @@ async function downloadBytes(download: import('@playwright/test').Download) {
 
 test.describe('P1 release flows', { tag: '@P1' }, () => {
   test('E16 duplicate class respects trimmed values', async ({ app, page, harness }) => {
+    // Leave room to open the creation form and exercise duplicate validation.
+    const data: Seed = baseline();
+    data.plans = [{ teacherUid: 'teacher-a', planId: 'level1', startedAt: NOW, expiresAt: '2027-11-10T05:00:00.000Z' }];
+    await harness.seed(data);
     await app.login(); await page.goto('/classes');
     await page.getByTestId('school-year').selectOption('2569'); await page.getByTestId('term').selectOption('1');
     await page.getByTestId('add-class').click();

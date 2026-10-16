@@ -27,7 +27,10 @@ export function baseline() {
     work: [{ studentId: 'student-a', taskId: 'task-1', status: 'ส่งตรงเวลา' as Status, savedAt: OLD_DATE }],
   };
 }
-export type Seed = ReturnType<typeof baseline>;
+export type Seed = ReturnType<typeof baseline> & {
+  plans?: { teacherUid: string; planId: 'level1' | 'level2' | 'level3'; startedAt: string; expiresAt: string }[];
+  planCodes?: { code: string; teacherUid: string; planId: 'level1' | 'level2' | 'level3'; status: 'unused' | 'used' | 'cancelled'; createdAt: string; expiresAt: string }[];
+};
 export interface Work {
   classId: string; studentId: string; taskId: string; status: Status; savedAt: string;
 }

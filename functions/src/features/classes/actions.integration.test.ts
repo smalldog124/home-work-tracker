@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { beforeEach, expect, it } from 'vitest';
 import { getAuth } from 'firebase-admin/auth';
+import { Timestamp } from 'firebase-admin/firestore';
 import { testContext } from '../../lib/test-context';
 const { ctx, app, clear } = testContext();
 const project = process.env.GCLOUD_PROJECT ?? 'demo-home-work';
@@ -49,4 +50,33 @@ it('revoked session is rejected by callable', async () => {
   await new Promise(resolve => setTimeout(resolve, 1100));
   await getAuth(app).revokeRefreshTokens(uid);
   expect((await call('createClass', input(), token)).body.error.status).toBe('UNAUTHENTICATED');
+});
+
+it('refreshing the teacher profile cannot remove the saved plan', async () => {
+  const planRef = ctx.db.doc(`teachers/${uid}/subscription/current`);
+  const plan = { planId: 'level2', startedAt: Timestamp.fromDate(ctx.now()), expiresAt: Timestamp.fromDate(new Date('2027-11-10T05:00:00.000Z')), lastCodeId: 'seed-code', version: 1, updatedAt: Timestamp.fromDate(ctx.now()) };
+  await planRef.set(plan);
+  // Deliberately force the profile replacement path in getTeacher.
+  await ctx.db.doc(`teachers/${uid}`).set({ ownerId: uid, name: 'ชื่อเก่า', email: 'old@example.test' });
+  const response = await call('getTeacher', {}, token);
+  expect(response.status).toBe(200);
+  expect(response.body.result).toMatchObject({ email: 'teacher@example.test' });
+  expect((await planRef.get()).data()).toEqual(plan);
+});
+
+it.each(['previewPlanCode', 'redeemPlanCode'])('%s requires an authenticated Google session', async name => {
+  const data = { code: 'a-long-unknown-code-with-at-least-32-characters', ...(name === 'redeemPlanCode' ? { requestId: randomUUID(), previewToken: 'fake' } : {}) };
+  for (const idToken of [undefined, 'forged']) {
+    const response = await call(name, data, idToken);
+    expect(response.body.error?.status).toBe('UNAUTHENTICATED');
+  }
+});
+
+it.each(['previewPlanCode', 'redeemPlanCode'])('%s rate-limits code guessing before looking up the code', async name => {
+  // Exhaust the existing distributed limiter fixture without issuing many HTTP calls.
+  await ctx.db.doc(`teachers/${uid}/rateLimits/${name}`).set({ count: 10000, resetAt: Timestamp.fromMillis(Date.now() + 60000), expiresAt: Timestamp.fromMillis(Date.now() + 86400000) });
+  const data = { code: 'a-long-unknown-code-with-at-least-32-characters', ...(name === 'redeemPlanCode' ? { requestId: randomUUID(), previewToken: 'fake' } : {}) };
+  const response = await call(name, data, token);
+  expect(response.body.error).toMatchObject({ status: 'RESOURCE_EXHAUSTED', details: { reason: 'RATE_LIMIT' } });
+  expect((await ctx.db.doc(`teachers/${uid}/subscription/current`).get()).exists).toBe(false);
 });

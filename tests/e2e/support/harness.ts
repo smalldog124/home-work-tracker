@@ -81,6 +81,36 @@ async function seed(data: Seed) {
   );
   // Split batches to stay below Firestore's write limit for large-table fixtures.
   const writes: (() => Promise<unknown>)[] = [];
+  // Mirror the plan's server-owned fixtures; browser tests never write these records.
+  const usage = new Map<string, { teacherUid: string; year: number; count: number }>();
+  for (const klass of data.classes) {
+    const key = `${klass.ownerId}/${klass.year}`;
+    const row = usage.get(key) ?? { teacherUid: klass.ownerId, year: klass.year, count: 0 };
+    row.count++;
+    usage.set(key, row);
+  }
+  for (const row of usage.values()) writes.push(() =>
+    db.doc(`teachers/${row.teacherUid}/classroomUsage/${row.year}`).set({
+      schoolYear: row.year, classroomCount: row.count, updatedAt: Timestamp.fromDate(new Date(data.now)),
+    }),
+  );
+  for (const plan of data.plans ?? []) writes.push(() =>
+    db.doc(`teachers/${plan.teacherUid}/subscription/current`).set({
+      planId: plan.planId, startedAt: Timestamp.fromDate(new Date(plan.startedAt)),
+      expiresAt: Timestamp.fromDate(new Date(plan.expiresAt)), lastCodeId: 'seed-code',
+      version: 1, updatedAt: Timestamp.fromDate(new Date(data.now)),
+    }),
+  );
+  for (const code of data.planCodes ?? []) writes.push(() =>
+    db.doc(`planCodes/${hash(code.code)}`).set({
+      teacherUid: code.teacherUid, planId: code.planId, status: code.status,
+      createdAt: Timestamp.fromDate(new Date(code.createdAt)), expiresAt: Timestamp.fromDate(new Date(code.expiresAt)),
+      createdBy: 'e2e-admin', usedAt: code.status === 'used' ? Timestamp.fromDate(new Date(data.now)) : null,
+      usedBy: code.status === 'used' ? code.teacherUid : null,
+      cancelledAt: code.status === 'cancelled' ? Timestamp.fromDate(new Date(data.now)) : null,
+      cancelledBy: code.status === 'cancelled' ? 'e2e-admin' : null, resultPlanExpiresAt: null,
+    }),
+  );
   for (const t of data.teachers)
     writes.push(() =>
       db

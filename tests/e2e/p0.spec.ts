@@ -1,5 +1,5 @@
 import { test, expect, App } from './support/fixtures';
-import { baseline, NOW, OLD_DATE, statuses } from './support/data';
+import { baseline, NOW, OLD_DATE, statuses, type Seed } from './support/data';
 
 test.describe('P0 critical flows', { tag: '@P0' }, () => {
   test('E01 sign-in, route guard, sign-out', async ({ app, page }) => {
@@ -29,7 +29,11 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
     expect((await harness.snapshot()).work).toHaveLength(1);
   });
 
-  test('E03 create class, student, task, and QR', async ({ app, page }) => {
+  test('E03 create class, student, task, and QR', async ({ app, page, harness }) => {
+    // This flow needs a third classroom; Starter's limit is tested in plans.spec.ts.
+    const data: Seed = baseline();
+    data.plans = [{ teacherUid: 'teacher-a', planId: 'level1', startedAt: NOW, expiresAt: '2027-11-10T05:00:00.000Z' }];
+    await harness.seed(data);
     await app.login(); await page.goto('/classes');
     await page.getByTestId('school-year').selectOption('2569');
     await page.getByTestId('term').selectOption('2');

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { beforeAll, afterAll, beforeEach, expect, it } from 'vitest';
 import { initializeTestEnvironment, assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
 let env: RulesTestEnvironment;
 const thai = new Date(Date.now() + 7 * 3600000);
 const year = thai.getUTCFullYear() + 543 - (thai.getUTCMonth() < 4 ? 1 : 0);
@@ -50,4 +50,55 @@ it('QR, requests, audit, versions and rate limits are backend-only', async () =>
 it('child access fails when parent is missing', async () => {
   await env.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), 'teachers/a/classes/missing/students/one'), { name: 'orphan' }));
   await assertFails(getDoc(doc(db(), 'teachers/a/classes/missing/students/one')));
+});
+
+it('teachers can read only their own plan and yearly usage', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'teachers/a/subscription/current'), { planId: 'level1', version: 1 });
+    await setDoc(doc(context.firestore(), `teachers/a/classroomUsage/${year}`), { schoolYear: year, classroomCount: 2 });
+  });
+  for (const path of ['teachers/a/subscription/current', `teachers/a/classroomUsage/${year}`]) {
+    await assertSucceeds(getDoc(doc(db(), path)));
+    for (const client of [db('b'), db('a', 'password'), env.unauthenticatedContext().firestore()]) await assertFails(getDoc(doc(client, path)));
+  }
+});
+
+it.each([
+  'teachers/a/subscription/current', 'teachers/a/classroomUsage/2569',
+  'teachers/a/planEvents/event', 'teachers/a/planRequests/request',
+  'planCodes/hash', 'classroomDeletionJobs/job',
+])('browser cannot create, edit or delete protected plan record %s', async path => {
+  await env.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), path), { secret: 'server-only' }));
+  await assertFails(setDoc(doc(db(), path), { planId: 'level3', classroomCount: 0 }));
+  await assertFails(updateDoc(doc(db(), path), { forged: true }));
+  await assertFails(deleteDoc(doc(db(), path)));
+});
+
+it.each(['planCodes/hash', 'classroomDeletionJobs/job', 'teachers/a/planRequests/request'])('%s is unreadable even by the target teacher', async path => {
+  await env.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), path), { teacherUid: 'a', secret: 'server-only' }));
+  for (const client of [db(), db('b'), env.unauthenticatedContext().firestore()]) await assertFails(getDoc(doc(client, path)));
+});
+
+it('plan events cannot be read by another teacher or an anonymous client', async () => {
+  await env.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), 'teachers/a/planEvents/event'), { actorId: 'admin' }));
+  for (const client of [db('b'), env.unauthenticatedContext().firestore()]) await assertFails(getDoc(doc(client, 'teachers/a/planEvents/event')));
+});
+
+it('deleting classrooms and all their children become unreadable immediately', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'teachers/a/classes/current'), { status: 'deleting' });
+  });
+  for (const suffix of ['', '/students/one', '/tasks/one', '/work/one', '/workVersions/one']) {
+    await assertFails(getDoc(doc(db(), `teachers/a/classes/current${suffix}`)));
+  }
+  await assertFails(getDocs(collection(db(), 'teachers/a/classes/current/students')));
+});
+
+it('active-only classroom queries hide deleting classrooms', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    await updateDoc(doc(context.firestore(), 'teachers/a/classes/current'), { status: 'active' });
+    await setDoc(doc(context.firestore(), 'teachers/a/classes/deleting'), { ownerId: 'a', year, term: 1, status: 'deleting' });
+  });
+  const result = await assertSucceeds(getDocs(query(collection(db(), 'teachers/a/classes'), where('year', '==', year), where('term', '==', 1), where('status', '==', 'active'))));
+  expect(result.docs.map(doc => doc.id)).toEqual(['current']);
 });
