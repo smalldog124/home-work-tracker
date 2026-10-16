@@ -75,7 +75,7 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
         await expect(app.result()).not.toContainText(hidden);
       }
       expect(await app.work()).toEqual([expect.objectContaining({ status, savedAt: NOW })]);
-      await expect.poll(async () => (await app.sounds()).filter(s => s.endsWith('/scan-success.mp3')).length).toBe(1);
+      await expect.poll(async () => (await app.sounds()).filter(s => s.endsWith('/scan-success.wav')).length).toBe(1);
       await app.classTab('summary');
       await expect(app.cell()).toContainText('10/10/69');
     });
@@ -90,7 +90,7 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
     await expect(app.result()).toContainText('8/10/69');
     await expect(app.result()).toContainText('ส่งตรงเวลา');
     expect(await app.work()).toEqual([expect.objectContaining({ status: 'ส่งตรงเวลา', savedAt: OLD_DATE })]);
-    await expect.poll(async () => (await app.sounds()).filter(s => s.endsWith('/scan-error.mp3')).length).toBe(1);
+    await expect.poll(async () => (await app.sounds()).filter(s => s.endsWith('/scan-error.wav')).length).toBe(1);
   });
 
   test('E07 held QR is read once until it leaves the camera', async ({ app, page, harness }) => {
@@ -123,7 +123,7 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
     await app.showQr(null); await page.waitForTimeout(600); await app.read('student-a2');
     await expect(panel).toContainText('สมหญิง ทดสอบ');
     await expect(page.getByTestId('confirm-past-work')).toBeDisabled();
-    await expect(page.getByTestId('work-status')).toHaveValue('ส่งสายระดับ 2');
+    await expect(page.getByTestId('work-status')).toHaveValue('late-2');
   });
 
   test('E08 another device submits selected past work before confirmation', async ({ app, page, context, harness }) => {

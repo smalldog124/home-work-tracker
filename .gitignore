@@ -158,3 +158,4 @@ functions/lib/
 shared/dist/
 .tools/
 functions/deploy/
+.e2e/

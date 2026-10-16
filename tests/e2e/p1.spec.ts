@@ -107,24 +107,27 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
     try {
       await expect(page.getByTestId('network-error')).toContainText('อินเทอร์เน็ต');
       await app.read(); await page.waitForTimeout(800); expect(await app.work()).toHaveLength(0); expect(await app.sounds()).toHaveLength(0);
+      // Remove the held QR while offline. Reconnecting restarts the camera;
+      // leaving it visible can save before the explicit new scan below.
+      await app.showQr(null);
     } finally { await context.setOffline(false); }
     await page.getByTestId('resume-scan').click(); await app.showQr(null); await page.waitForTimeout(600); await app.read();
     await expect(app.result()).toHaveAttribute('data-state', 'saved');
   });
 
   test('E19 scan status persists between students/modes/background and resets on re-entry', async ({ app, page, context }) => {
-    await app.login(); await app.scan(); await expect(page.getByTestId('work-status')).toHaveValue('ส่งตรงเวลา');
+    await app.login(); await app.scan(); await expect(page.getByTestId('work-status')).toHaveValue('on-time');
     await app.status('ส่งสายระดับ 2'); await expect(page.getByTestId('late-range')).toContainText('3–7');
     await app.read(); await expect(app.result()).toHaveAttribute('data-state', 'saved');
     await app.showQr(null); await page.waitForTimeout(600); await app.read('student-a2');
     await expect(app.result()).toHaveAttribute('data-state', 'saved');
     await expect.poll(async () => (await app.work('student-a2'))[0]?.status).toBe('ส่งสายระดับ 2');
-    await page.getByTestId('scan-mode-past').click(); await expect(page.getByTestId('work-status')).toHaveValue('ส่งสายระดับ 2');
+    await page.getByTestId('scan-mode-past').click(); await expect(page.getByTestId('work-status')).toHaveValue('late-2');
     const background = await context.newPage(); await background.goto('about:blank'); await background.bringToFront(); await page.bringToFront();
     await expect(page.getByTestId('camera-state')).toHaveAttribute('data-state', 'ready');
-    await expect(page.getByTestId('work-status')).toHaveValue('ส่งสายระดับ 2');
+    await expect(page.getByTestId('work-status')).toHaveValue('late-2');
     await page.getByTestId('nav-home').click(); await page.getByTestId('scan-work').click();
-    await expect(page.getByTestId('work-status')).toHaveValue('ส่งตรงเวลา');
+    await expect(page.getByTestId('work-status')).toHaveValue('on-time');
   });
 
   test('E20 summary axes, full names, sticky headers, and large mobile table', async ({ app, page, harness }) => {
@@ -163,7 +166,12 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
       await expect(other.getByTestId('save-result')).toHaveAttribute('data-state', 'saved');
       if (event === 'open') await page.reload();
       if (event === 'return-page') { await page.getByTestId('nav-home').click(); await app.classTab('summary'); }
-      if (event === 'foreground') { await other.bringToFront(); await page.bringToFront(); }
+      if (event === 'foreground') {
+        await other.bringToFront(); await page.bringToFront();
+        // Headless Chrome keeps both documents visible/focused and emits no focus
+        // event for bringToFront. Exercise the browser event the app subscribes to.
+        await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      }
       if (event === 'refresh') await page.getByTestId('refresh-summary').click();
       await expect(app.cell()).toContainText('ส่งสายระดับ 1');
     });
@@ -199,7 +207,12 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
     await app.login(); await app.scan(); await harness.fault('hold-response'); await app.read();
     await expect(page.getByTestId('pending-save')).toBeVisible();
     await page.getByTestId('account-menu').click(); await page.getByRole('button', { name: 'ออกจากระบบ', exact: true }).click();
-    await app.login('teacher-b');
+    // Keep this document alive so the held fetch can reach the unmounted old session.
+    // A full navigation would abort the request and only test reload isolation.
+    await expect(page).toHaveURL(/\/sign-in$/);
+    await page.evaluate(() => history.replaceState(null, '', '/sign-in?e2eTeacher=teacher-b'));
+    await page.getByRole('button', { name: 'เข้าสู่ระบบด้วย Google', exact: true }).click();
+    await expect(page).toHaveURL(/\/home$/);
     const oldReply = page.waitForResponse(response => new URL(response.url()).pathname.endsWith('/saveWork'));
     await harness.fault('release'); await oldReply;
     await expect(page.getByTestId('pending-save')).toHaveCount(0); await expect(page.getByTestId('scan-result')).toHaveCount(0);
