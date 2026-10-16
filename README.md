@@ -11,7 +11,7 @@ A Thai web app for teachers to record student work with QR codes. Teachers sign 
 
 This README owns technology choices and file placement. `plan.md` owns product behavior and backend requirements. [requiremen.txt](requiremen.txt) holds the original requirements. Explicit user instructions take priority; update the affected document when a decision changes.
 
-The backend, shared contracts, Firestore Rules, and backend tests are implemented. The frontend remains planned. The tree below includes the target frontend layout; create UI folders when those features are implemented. See [docs/backend.md](docs/backend.md) for the callable contract and [docs/deployment.md](docs/deployment.md) for working commands.
+The frontend, backend, shared contracts, Firestore Rules, and tests are implemented. The React frontend lives in `web/` and connects to the existing Firebase callables. Start with the [Thai localhost guide](docs/localhost.md). See [docs/backend.md](docs/backend.md) for the callable contract and [docs/deployment.md](docs/deployment.md) for production prerequisites.
 
 ## Tech Stack
 
@@ -43,7 +43,7 @@ Feature-specific choices:
 - Use `@zxing/browser` as the initial QR reader and test it on real iPhone and Android devices before release.
 - Keep scan state in React state and `useScanSession.ts`. Keep server data in TanStack Query.
 - Configure refetch explicitly for the five events in the plan. Clear account data on sign-out. Save retries must use the original request ID.
-- Select Excel and PDF libraries during those features' implementation. Check workbook safety and Thai PDF text before recording the selected packages here. Parse files and generate downloads in the browser.
+- Excel uses ExcelJS with file-size/row limits, formula rejection and editable review. PDF uses pdf-lib with @pdf-lib/fontkit and embedded Sarabun for Thai shaping; QR images use qrcode. Files are parsed and generated in the browser. Excel and PDF libraries load only when needed.
 - Follow the font and visual requirements in [plan.md](plan.md#2-look-and-feel) and its [QR Files section](plan.md#15-qr-files). Place web and PDF font files in `web/src/assets/fonts/`, with their license files.
 
 ## Folder Structure
@@ -244,10 +244,14 @@ npm run typecheck
 npm run test:functions
 npm run test:integration
 npm run emulators
+npm run dev
+npm run build:web
+npm run test:web
+npm run test:e2e:local
 ```
 
-Integration tests require Java 21 and use a local demo Firebase project. `npm test` runs backend unit tests. `test:e2e:p0` and `test:e2e:p1` select browser suites, which still require the future UI/harness. The build generates `functions/deploy/` as the Firebase upload source, bundling shared runtime contracts so deployment never depends on a sibling workspace. Production packaging and prerequisites are documented in [docs/deployment.md](docs/deployment.md).
+Integration and browser tests require Java 21 and use a local demo Firebase project. `npm test` runs backend and frontend unit tests. `test:e2e:local` starts the app, a dedicated test Functions bundle and Emulator harness, runs Playwright, then stops its services. The build generates `functions/deploy/` as the Firebase upload source, bundling shared runtime contracts so deployment never depends on a sibling workspace. `build:web` builds the Firebase Hosting artifact in `web/dist/`. Production packaging and prerequisites are documented in [docs/deployment.md](docs/deployment.md).
 
-Keep setup and deployment steps in `docs/deployment.md`, and recovery steps in `docs/recovery.md`. Record required environment-variable names without secret values. Keep generated build output and local credentials out of version control.
+Keep localhost setup in `docs/localhost.md`, deployment steps in `docs/deployment.md`, and recovery steps in `docs/recovery.md`. Record required environment-variable names without secret values. Keep generated build output and local credentials out of version control.
 
 For each implementation change, keep tests close to the changed behavior, update this README when stack or placement changes, and update `plan.md` when product behavior changes.

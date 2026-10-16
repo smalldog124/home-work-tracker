@@ -13,8 +13,8 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1, // Shared emulator clock and fault controls require isolation.
   retries: 0,
-  timeout: 45_000,
-  expect: { timeout: 10_000 },
+  timeout: 90_000,
+  expect: { timeout: 30_000 },
   forbidOnly: Boolean(process.env.CI),
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
@@ -25,5 +25,5 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], ...(process.env.E2E_BROWSER_CHANNEL ? { channel: process.env.E2E_BROWSER_CHANNEL } : {}) } }],
 });

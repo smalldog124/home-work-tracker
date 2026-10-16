@@ -7,19 +7,24 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test": "npm run test:functions",
+    "test": "npm run test:functions && npm run test:web",
     "test:e2e": "playwright test",
     "test:e2e:p0": "playwright test --grep @P0",
     "test:e2e:p1": "playwright test --grep @P1",
     "test:e2e:list": "playwright test --list",
     "test:e2e:types": "tsc -p tests/e2e/tsconfig.json",
     "test:e2e:report": "playwright show-report",
-    "build": "npm run build -w shared && npm run build -w functions && node scripts/prepare-functions.mjs",
-    "typecheck": "npm run build -w shared && npm run typecheck -w functions && npm run test:e2e:types",
+    "build": "npm run build -w shared && npm run build -w functions && node scripts/prepare-functions.mjs && npm run build -w web",
+    "typecheck": "npm run build -w shared && npm run typecheck -w functions && npm run typecheck -w web && npm run test:e2e:types",
     "test:functions": "npm run build -w shared && npm run test -w functions",
     "test:integration": "npm run build && node scripts/emulators.mjs test",
     "emulators": "npm run build && node scripts/emulators.mjs start",
-    "package:functions": "npm run build && npm install --package-lock-only --ignore-scripts --prefix functions/deploy"
+    "package:functions": "npm run build && npm install --package-lock-only --ignore-scripts --prefix functions/deploy",
+    "dev": "npm run dev -w web",
+    "dev:lan": "npm run dev:lan -w web",
+    "build:web": "npm run build -w shared && npm run build -w web",
+    "test:web": "npm run test -w web",
+    "test:e2e:local": "npm run build -w shared && node scripts/e2e.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
@@ -39,6 +44,7 @@
   },
   "workspaces": [
     "functions",
-    "shared"
+    "shared",
+    "web"
   ]
 }
