@@ -90,3 +90,11 @@ Rates are 120/minute per teacher/action for scanning, QR resolution and result l
 The school year changes on May 1 at midnight in Bangkok. Access and mutations are blocked outside the current and previous two school years, before physical cleanup runs. The scheduled function runs daily at 00:05 Bangkok time and removes expired classes recursively, then independently cleans expired students, tasks, work, revisions, QR, requests and audits. Each child has year/expiry metadata so cleanup can resume after a parent was already deleted. Repeated cleanup is safe. Teacher profiles and reusable subjects remain.
 
 Backups, restore procedures, production App Check metrics, billing alerts and load measurement still require operator setup; no production deployment or cloud resources were created by this implementation.
+
+## Teacher plans
+
+The plan implementation is specified by `model-plan.md`. `getPlanSummary` returns the effective plan and the current Buddhist school year's usage across both terms. `previewPlanCode` takes `code`; `redeemPlanCode` takes `requestId`, `code` and the returned `previewToken`. A stale preview raises `PLAN_PREVIEW_CHANGED` with the new preview, requiring another confirmation. All request and response contracts live in `shared/src/schemas/plan.ts`.
+
+`createClass` accepts the current school year only and checks plan expiry and yearly usage transactionally. `deleteClass` takes `requestId`, `classId` and the exact displayed `confirmationName` (`subject · group`). Its response marks deletion accepted; cleanup runs separately. Normal service access and browser Rules reject deleting classrooms immediately. Browser classroom lists must filter `status == active`, alongside year and term. Direct reads treat a missing status as active.
+
+Subscriptions live under `teachers/{uid}/subscription/current`, usage under `classroomUsage/{schoolYear}`, and plan history/results under `planEvents` and `planRequests`. Hash-keyed `planCodes` and `classroomDeletionJobs` are server-only. Minimal `classDeletionRequests` receipts survive cleanup to prevent an old retry from deleting a replacement classroom. No browser can directly write any of these records. Admin operations are terminal-only and use trusted service-account credentials; see [teacher-plans.md](teacher-plans.md).
