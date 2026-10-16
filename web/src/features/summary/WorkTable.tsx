@@ -1,5 +1,4 @@
 import { STATUS_LABELS } from "@home-work/shared";
-import { thaiDate } from "@/lib/date";
 import type { Student } from "../students/api";
 import type { Task } from "../tasks/api";
 import type { WorkRecord } from "./api";
@@ -15,6 +14,7 @@ export function WorkTable({
   onSelect: (student: Student, task: Task) => void;
 }) {
   const cells = new Map(work.map((w) => [`${w.studentId}:${w.taskId}`, w]));
+  const sortedStudents = [...students].sort((a, b) => a.number - b.number);
   return (
     <div
       className="summary-scroll"
@@ -26,50 +26,60 @@ export function WorkTable({
       <table className="work-table" data-testid="summary-table">
         <thead>
           <tr>
-            <th className="corner">ชิ้นงาน / นักเรียน</th>
-            {students.map((s) => (
-              <th key={s.id} data-testid="student-header">
-                <span>
-                  เลขที่ {s.number}
-                  {!s.active && " (ปิด)"}
-                </span>
-                <span title={s.name} className="short-name">
-                  {s.name.split(" ")[0]}
-                </span>
+            <th scope="col" className="corner">
+              นักเรียน
+            </th>
+            <th scope="col" className="missing-count">
+              ยังไม่ส่ง (ชิ้น)
+            </th>
+            {tasks.map((t) => (
+              <th
+                scope="col"
+                key={t.id}
+                data-testid="task-header"
+                className="task-column"
+              >
+                <span className="task-name">{t.name}</span>
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {tasks.map((t) => (
-            <tr key={t.id}>
-              <th data-testid="task-header">{t.name}</th>
-              {students.map((s) => {
-                const w = cells.get(`${s.id}:${t.id}`);
-                return (
-                  <td key={s.id}>
-                    <button
-                      className={`work-cell ${w?.status || "not-sent"}`}
-                      data-testid={`work-cell-${s.id}-${t.id}`}
-                      aria-label={`${s.name} ${t.name} ${w ? STATUS_LABELS[w.status] : "ยังไม่ส่ง"}`}
-                      onClick={() => onSelect(s, t)}
-                    >
-                      {w ? (
-                        <>
-                          <span>
-                            {thaiDate(w.savedAt.toDate().toISOString())}
-                          </span>
-                          <span>{STATUS_LABELS[w.status]}</span>
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </button>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {sortedStudents.map((s) => {
+            const missing = tasks.filter((t) => {
+              const record = cells.get(`${s.id}:${t.id}`);
+              return !record || record.status === "not-sent";
+            }).length;
+            return (
+              <tr key={s.id}>
+                <th scope="row" data-testid="student-header">
+                  {s.name}
+                  {!s.active && " (ปิด)"}
+                </th>
+                <td
+                  className="missing-count"
+                  data-testid={`missing-count-${s.id}`}
+                >
+                  {missing}
+                </td>
+                {tasks.map((t) => {
+                  const status =
+                    cells.get(`${s.id}:${t.id}`)?.status || "not-sent";
+                  return (
+                    <td key={t.id}>
+                      <button
+                        type="button"
+                        className={`work-cell ${status}`}
+                        data-testid={`work-cell-${s.id}-${t.id}`}
+                        aria-label={`${s.name} ${t.name} ${STATUS_LABELS[status]}`}
+                        onClick={() => onSelect(s, t)}
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

@@ -114,7 +114,7 @@ export function SummaryTab({
       {visible.length > 0 && tasks.length > 0 && (
         <>
           <p className="caption table-hint">
-            แตะช่องเพื่อดูชื่อเต็มและแก้สถานะ · เลื่อนตารางได้ทั้งสองทิศทาง
+            แตะช่องสีเพื่อดูรายละเอียดและแก้สถานะ
           </p>
           <WorkTable
             students={visible}

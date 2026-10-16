@@ -64,7 +64,8 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
     await app.classTab('tasks'); await expect(page.getByTestId(`delete-task-${task.id}`)).toBeDisabled();
     await app.classTab('summary'); await app.editWork('ยังไม่ส่ง', 'student-a', task.id);
     await page.getByTestId('confirm-clear-work').getByRole('button', { name: 'ยืนยัน', exact: true }).click();
-    await expect(app.cell('student-a', task.id)).toHaveText('—');
+    await expect(app.cell('student-a', task.id)).toHaveText('');
+    await expect(app.cell('student-a', task.id)).toHaveClass(/not-sent/);
     await app.classTab('tasks'); await page.getByTestId(`delete-task-${task.id}`).click();
     await page.getByTestId('confirm-delete-task').getByRole('button', { name: 'ยืนยัน', exact: true }).click();
     await expect(page.getByTestId(`task-row-${task.id}`)).toHaveCount(0);
@@ -140,26 +141,43 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
     await expect(table.getByTestId('student-header')).toHaveCount(50); await expect(table.getByTestId('task-header')).toHaveCount(30);
     await expect(table.getByTestId('task-header').first()).toHaveText('ชิ้นงานที่ 1');
     await expect(table.getByTestId('task-header').last()).toHaveText('ชิ้นงานที่ 30');
-    await expect(app.cell('large-0', 'large-task-0')).toHaveText('—');
+    await expect(app.cell('large-0', 'large-task-0')).toHaveText('');
+    await expect(app.cell('large-0', 'large-task-0')).toHaveCSS('background-color', 'rgb(226, 232, 235)');
+    await expect(table.locator('tbody tr')).toHaveCount(50);
+    await expect(table.locator('thead').getByTestId('task-header')).toHaveCount(30);
+    await expect(table.getByTestId('student-header').first()).toHaveText(data.students[0].name);
+    await expect(table.getByTestId('student-header').last()).toHaveText(data.students[49].name);
+    await expect(table.getByTestId('student-header').first()).not.toContainText('เลขที่');
+    await expect(page.getByTestId('missing-count-large-0')).toHaveText('30');
+    await expect(table.locator('.task-name').first()).toHaveCSS('writing-mode', 'vertical-rl');
+    await expect(table.locator('.task-name').first()).toHaveCSS('transform', 'matrix(-1, 0, 0, -1, 0, 0)');
     await app.cell('large-0', 'large-task-0').click(); await expect(page.getByTestId('work-panel')).toContainText(data.students[0].name);
     await page.getByTestId('close-work-panel').click();
     const scroll = page.getByTestId('summary-scroll');
     await scroll.evaluate(el => { el.scrollTop = 500; el.scrollLeft = 500; });
     expect(await scroll.evaluate(el => ({ x: el.scrollLeft > 0, y: el.scrollTop > 0 }))).toEqual({ x: true, y: true });
     const bounds = await scroll.boundingBox(); expect(bounds).not.toBeNull();
-    const studentHeader = await table.getByTestId('student-header').nth(10).boundingBox();
-    const taskHeader = await table.getByTestId('task-header').nth(15).boundingBox();
-    expect(studentHeader!.y).toBeGreaterThanOrEqual(bounds!.y - 1);
-    expect(studentHeader!.y).toBeLessThan(bounds!.y + 100);
-    expect(taskHeader!.x).toBeGreaterThanOrEqual(bounds!.x - 1);
-    expect(taskHeader!.x).toBeLessThan(bounds!.x + 200);
+    const studentHeader = await table.getByTestId('student-header').nth(15).boundingBox();
+    const taskHeader = await table.getByTestId('task-header').nth(10).boundingBox();
+    expect(taskHeader!.y).toBeGreaterThanOrEqual(bounds!.y - 1);
+    expect(taskHeader!.y).toBeLessThan(bounds!.y + 10);
+    expect(studentHeader!.x).toBeGreaterThanOrEqual(bounds!.x - 1);
+    expect(studentHeader!.x).toBeLessThan(bounds!.x + 10);
+    const count = await page.getByTestId('missing-count-large-15').boundingBox();
+    expect(count!.x).toBeCloseTo(studentHeader!.x + studentHeader!.width, 0);
   });
 
   for (const event of ['open', 'return-page', 'foreground', 'save', 'refresh'] as const) {
     test(`E20 fresh summary on ${event}`, async ({ app, page, context, harness }) => {
       await app.login(); await app.classTab('summary');
       if (event === 'save') {
-        await app.editWork('ส่งสายระดับ 1'); await expect(app.cell()).toContainText('ส่งสายระดับ 1'); return;
+        await app.editWork('ส่งสายระดับ 1');
+        await expect(app.cell()).toHaveClass(/late-1/);
+        await expect(app.cell()).toHaveAccessibleName(/ส่งสายระดับ 1/);
+        await expect(app.cell()).toHaveText('');
+        await expect(app.cell()).toHaveCSS('background-color', 'rgb(255, 251, 227)');
+        await expect(page.getByTestId('missing-count-student-a')).toHaveText('1');
+        return;
       }
       const other = await context.newPage(); const b = new App(other, harness, app.seed);
       await b.classTab('summary'); await b.editWork('ส่งสายระดับ 1');
@@ -173,7 +191,11 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
         await page.evaluate(() => window.dispatchEvent(new Event('focus')));
       }
       if (event === 'refresh') await page.getByTestId('refresh-summary').click();
-      await expect(app.cell()).toContainText('ส่งสายระดับ 1');
+      await expect(app.cell()).toHaveClass(/late-1/);
+      await expect(app.cell()).toHaveAccessibleName(/ส่งสายระดับ 1/);
+      await expect(app.cell()).toHaveText('');
+      await expect(app.cell()).toHaveCSS('background-color', 'rgb(255, 251, 227)');
+      await expect(page.getByTestId('missing-count-student-a')).toHaveText('1');
     });
   }
 

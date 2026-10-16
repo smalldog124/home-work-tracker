@@ -77,7 +77,10 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
       expect(await app.work()).toEqual([expect.objectContaining({ status, savedAt: NOW })]);
       await expect.poll(async () => (await app.sounds()).filter(s => s.endsWith('/scan-success.wav')).length).toBe(1);
       await app.classTab('summary');
-      await expect(app.cell()).toContainText('10/10/69');
+      await expect(app.cell()).toHaveText('');
+      await expect(app.cell()).toHaveAccessibleName(new RegExp(status));
+      await app.cell().click();
+      await expect(page.getByTestId('work-panel')).toContainText('10/10/69');
     });
   }
 
@@ -196,7 +199,7 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
     await page.getByTestId('confirm-student-toggle').getByRole('button', { name: 'ยืนยัน', exact: true }).click();
     await expect(page.getByTestId('student-row-student-a')).toHaveCount(0);
     await app.classTab('summary'); await expect(app.cell('student-a', 'task-1')).toHaveCount(0);
-    await page.getByTestId('show-inactive').check(); await expect(app.cell('student-a', 'task-1')).toContainText('8/10/69');
+    await page.getByTestId('show-inactive').check(); await expect(app.cell('student-a', 'task-1')).toHaveClass(/on-time/);
     await app.scan(); await app.read(); await expect(app.result()).toContainText('ปิดใช้งาน');
     await app.classTab('students'); await page.getByTestId('show-inactive').check();
     await page.getByTestId('toggle-student-student-a').click();
@@ -218,7 +221,9 @@ test.describe('P0 critical flows', { tag: '@P0' }, () => {
     expect(await app.work('student-a', 'task-1')).toHaveLength(1);
     await page.getByTestId('save-work-status').click();
     await page.getByTestId('confirm-clear-work').getByRole('button', { name: 'ยืนยัน', exact: true }).click();
-    await expect(app.cell('student-a', 'task-1')).toHaveText('—');
+    await expect(app.cell('student-a', 'task-1')).toHaveText('');
+    await expect(app.cell('student-a', 'task-1')).toHaveClass(/not-sent/);
+    await expect(page.getByTestId('missing-count-student-a')).toHaveText('3');
     expect(await app.work('student-a', 'task-1')).toHaveLength(0);
     await app.editWork('ส่งสายระดับ 1', 'student-a', 'task-1');
     await expect(page.getByTestId('save-result')).toHaveAttribute('data-state', 'saved');

@@ -658,6 +658,7 @@ input[type="checkbox"] {
   overscroll-behavior: contain;
 }
 .work-table {
+  --student-column-width: 220px;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.875rem;
@@ -675,22 +676,21 @@ input[type="checkbox"] {
   top: 0;
   background: #edf6f8;
   z-index: 2;
-  width: 130px;
-  min-width: 130px;
-  max-width: 130px;
-  height: 76px;
+  height: 120px;
   padding: 10px;
 }
-.work-table thead th span {
-  display: block;
+.work-table .task-column {
+  width: 44px;
+  min-width: 44px;
+  padding: 12px 8px;
+  vertical-align: bottom;
 }
-.short-name {
-  max-width: 108px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.work-table .task-name {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
   white-space: nowrap;
-  font-weight: 400;
-  color: #60767d;
+  text-align: left;
 }
 .work-table tbody th {
   position: sticky;
@@ -698,9 +698,9 @@ input[type="checkbox"] {
   z-index: 1;
   background: #f4f8f9;
   text-align: left;
-  width: 175px;
-  min-width: 175px;
-  max-width: 175px;
+  width: var(--student-column-width);
+  min-width: var(--student-column-width);
+  max-width: var(--student-column-width);
   padding: 16px;
   overflow-wrap: anywhere;
   font-weight: 500;
@@ -709,27 +709,45 @@ input[type="checkbox"] {
   position: sticky;
   left: 0;
   z-index: 3;
-  width: 175px;
-  min-width: 175px;
+  width: var(--student-column-width);
+  min-width: var(--student-column-width);
+}
+.work-table .missing-count {
+  position: sticky;
+  left: var(--student-column-width);
+  width: 72px;
+  min-width: 72px;
+  max-width: 72px;
+  padding: 8px;
+  background: #f4f8f9;
+  z-index: 1;
+}
+.work-table thead .missing-count {
+  background: #edf6f8;
+  z-index: 3;
 }
 .work-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 7px;
-  width: 129px;
-  min-height: 77px;
+  display: block;
+  padding: 0;
+  width: 100%;
+  min-width: 44px;
+  min-height: 48px;
+  height: 100%;
   border: 0;
-  line-height: 1.6;
   background: white;
+}
+.work-table tbody td:not(.missing-count) {
+  padding: 0;
+}
+.work-cell:focus-visible {
+  outline: 3px solid #166745;
+  outline-offset: -3px;
 }
 .work-cell:hover {
   filter: brightness(0.96);
 }
 .work-cell.not-sent {
-  color: #8a9ca2;
+  background: #e2e8eb;
 }
 .work-cell.on-time {
   color: #166745;
@@ -1144,11 +1162,11 @@ input[type="checkbox"] {
   .summary-stats small {
     display: block;
   }
+  .work-table {
+    --student-column-width: 145px;
+  }
   .work-table tbody th,
   .work-table thead .corner {
-    min-width: 145px;
-    width: 145px;
-    max-width: 145px;
     padding: 12px;
   }
   .panel {
