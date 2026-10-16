@@ -287,15 +287,14 @@ input[type="checkbox"] {
   justify-content: center;
   align-items: center;
 }
-.account-name {
-  font-size: 0.9rem;
-}
 .account-dropdown {
   position: absolute;
   right: 0;
   top: 50px;
-  width: 250px;
+  width: 320px;
   max-width: 85vw;
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
   background: #fff;
   padding: 15px;
   border: 1px solid #d9e6e9;
@@ -307,6 +306,25 @@ input[type="checkbox"] {
   overflow-wrap: anywhere;
   font-size: 0.875rem;
   margin-bottom: 8px;
+}
+.account-dropdown > .button {
+  display: flex;
+  width: 100%;
+  justify-content: flex-start;
+}
+.teacher-name {
+  font-weight: 650;
+}
+.teacher-plan {
+  border-top: 1px solid #d9e6e9;
+  border-bottom: 1px solid #d9e6e9;
+  padding: 12px 0;
+  margin: 10px 0;
+}
+.account-button:focus-visible,
+.brand:focus-visible {
+  outline: 2px solid #258773;
+  outline-offset: 3px;
 }
 .main-nav {
   display: flex;
@@ -1030,12 +1048,13 @@ input[type="checkbox"] {
   }
 }
 @media (max-width: 600px) {
+  html {
+    /* Keep scroll targets above the fixed bottom navigation. */
+    scroll-padding-bottom: calc(100px + env(safe-area-inset-bottom));
+  }
   .topbar {
     height: 74px;
     padding: 0 18px;
-  }
-  .account-name {
-    display: none;
   }
   .main-nav {
     position: fixed;
@@ -1185,4 +1204,46 @@ input[type="checkbox"] {
   .sign-in-card h1 {
     font-size: 1.8rem;
   }
+}
+
+.plan-summary {
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 16px;
+  background: var(--card, #fff);
+  padding: 20px;
+  margin: 16px 0 24px;
+}
+.plan-summary h2 { margin: 0 0 8px; }
+.plan-summary p { margin: 8px 0; }
+
+.plan-details {
+  margin-top: 32px;
+}
+.plan-details > p {
+  margin: 8px 0;
+}
+.plan-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 16px;
+  margin: 20px 0;
+}
+.plan-option {
+  border: 1px solid #d9e6e9;
+  border-radius: 14px;
+  padding: 20px;
+  background: #fff;
+}
+.plan-option p {
+  margin-top: 8px;
+}
+.plan-option-limit {
+  font-size: 1.25rem;
+  font-weight: 650;
+  color: #267185;
+}
+.admin-contact-details {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
 }

@@ -8,6 +8,7 @@ export function Panel({
   testId,
   closeTestId,
   locked = false,
+  onCloseAutoFocus,
 }: {
   title: string;
   children: ReactNode;
@@ -15,6 +16,7 @@ export function Panel({
   testId?: string;
   closeTestId?: string;
   locked?: boolean;
+  onCloseAutoFocus?: () => void;
 }) {
   return (
     <Dialog.Root
@@ -28,6 +30,10 @@ export function Panel({
         <Dialog.Content
           className="panel"
           data-testid={testId}
+          onCloseAutoFocus={onCloseAutoFocus ? (event) => {
+            event.preventDefault();
+            onCloseAutoFocus();
+          } : undefined}
           onPointerDownOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => {
             if (locked) e.preventDefault();

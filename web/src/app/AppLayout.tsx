@@ -1,15 +1,11 @@
-import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { Home, ScanLine, BookOpen, LogOut, ChevronDown } from "lucide-react";
-import { useAuth } from "@/features/auth/useAuth";
-import { Button } from "@/components/ui/button";
+import { Home, ScanLine, BookOpen } from "lucide-react";
+import { TeacherMenu } from "@/features/teachers/TeacherMenu";
 export function AppLayout() {
-  const { user, logout } = useAuth();
-  const [menu, setMenu] = useState(false);
   return (
     <div className="app-shell">
       <header className="topbar">
-        <NavLink className="brand" to="/home">
+        <NavLink className="brand" to="/home" aria-label="กลับหน้าหลัก" data-testid="brand-home">
           <span className="brand-icon">
             <ScanLine size={24} />
           </span>
@@ -17,40 +13,7 @@ export function AppLayout() {
             บันทึกงาน<span className="brand-sub">สำหรับครู</span>
           </span>
         </NavLink>
-        <div className="account">
-          <button
-            className="account-button"
-            data-testid="account-menu"
-            aria-label="บัญชีของคุณ"
-            aria-expanded={menu}
-            onClick={() => setMenu(!menu)}
-          >
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt="รูปครู"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <span className="avatar">
-                {user?.displayName?.slice(0, 1) || "ค"}
-              </span>
-            )}
-            <span className="account-name">
-              {user?.displayName || "บัญชีครู"}
-            </span>
-            <ChevronDown size={16} />
-          </button>
-          {menu && (
-            <div className="account-dropdown">
-              <p>{user?.email}</p>
-              <Button variant="ghost" onClick={() => void logout()}>
-                <LogOut size={18} />
-                ออกจากระบบ
-              </Button>
-            </div>
-          )}
-        </div>
+        <TeacherMenu />
       </header>
       <nav className="main-nav" aria-label="เมนูหลัก">
         {[

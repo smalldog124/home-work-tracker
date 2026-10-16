@@ -1,7 +1,7 @@
 import { mutate } from "@/lib/save-request";
 import { useQuery } from "@tanstack/react-query";
 import { orderBy, where } from "firebase/firestore";
-import { createClassSchema } from "@home-work/shared";
+import { createClassSchema, deleteClassSchema } from "@home-work/shared";
 import { call, list, record } from "@/lib/api";
 import { useAuth } from "../auth/useAuth";
 export interface ClassRecord {
@@ -24,6 +24,7 @@ export const getClasses = (uid: string, year: number, term: number) =>
   list<ClassRecord>(uid, "classes", [
     where("year", "==", year),
     where("term", "==", term),
+    where("status", "==", "active"),
   ]);
 export const getClass = (uid: string, id: string) =>
   record<ClassRecord>(uid, `classes/${id}`);
@@ -46,3 +47,5 @@ export function useClasses(year: number, term: number) {
     enabled: year > 0,
   });
 }
+
+export const deleteClass = (input: unknown) => mutate<{ classId: string; status: "deleting" }>("deleteClass", input, deleteClassSchema);

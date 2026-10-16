@@ -4,6 +4,7 @@ import { useAuth } from "@/features/auth/useAuth";
 import { SignInPage } from "@/features/auth/SignInPage";
 import { HomePage } from "@/features/home/HomePage";
 import { ClassesPage } from "@/features/classes/ClassesPage";
+const PlanCodePage = lazy(() => import("@/features/plans/PlanCodePage").then(m => ({ default: m.PlanCodePage })));
 const ClassPage = lazy(() =>
   import("@/features/classes/ClassPage").then((m) => ({
     default: m.ClassPage,
@@ -35,6 +36,7 @@ export function Router() {
             <Route path="/classes" element={<ClassesPage />} />
             <Route path="/classes/:classId" element={<ClassPage />} />
             <Route path="/scan" element={<ScanPage />} />
+            <Route path="/plan/code" element={<PlanCodePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>

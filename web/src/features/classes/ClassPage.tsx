@@ -10,6 +10,7 @@ import { getWorkList } from "../summary/api";
 import { StudentsTab } from "../students/StudentsTab";
 import { TasksTab } from "../tasks/TasksTab";
 import { SummaryTab } from "../summary/SummaryTab";
+import { DeleteClassPanel } from "./DeleteClassPanel";
 import { Button } from "@/components/ui/button";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
@@ -64,6 +65,7 @@ export function ClassPage() {
   const [params, setParams] = useSearchParams();
   const tab = params.get("tab") || "summary";
   const [saved, setSaved] = useState("");
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
     if (data.classroom.data) rememberClass(user!.uid, data.classroom.data);
   }, [user, data.classroom.data]);
@@ -104,13 +106,17 @@ export function ClassPage() {
             ปีการศึกษา {classroom.year} · ภาคเรียน {classroom.term}
           </p>
         </div>
+        <div className="actions">
+        <Button variant="outline" onClick={() => setDeleting(true)}>ลบห้องเรียน</Button>
         <Button asChild data-testid="scan-work">
           <Link to="/scan">
             <ScanLine size={20} />
             สแกนงาน
           </Link>
         </Button>
+        </div>
       </div>
+      {deleting && <DeleteClassPanel classroom={classroom} currentYear={retention.data!.currentYear} onClose={() => setDeleting(false)} />}
       {retention.data.notice && (
         <p className="notice" data-testid="expiry-notice">
           ข้อมูลปี {retention.data.notice.year} จะหมดอายุใน{" "}

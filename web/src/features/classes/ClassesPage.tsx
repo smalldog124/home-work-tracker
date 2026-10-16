@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ErrorState";
 import { useAuth } from "../auth/useAuth";
 import { useClasses, useRetention, type ClassRecord } from "./api";
 import { ClassForm } from "./ClassForm";
+import { usePlan } from "../plans/api";
 export function ClassCard({ record }: { record: ClassRecord }) {
   return (
     <Link
@@ -29,6 +30,8 @@ export function ClassCard({ record }: { record: ClassRecord }) {
 export function ClassesPage() {
   const { user } = useAuth();
   const retention = useRetention();
+  const plan = usePlan();
+  const canCreate = Boolean(plan.data && (plan.data.classroomLimit === null || plan.data.classroomCount < plan.data.classroomLimit));
   const key = `filters:${user!.uid}`;
   const [selection, setSelection] = useState<{ year?: number; term: number }>(
     () => {
@@ -61,12 +64,13 @@ export function ClassesPage() {
         <Button
           data-testid="add-class"
           onClick={() => setAdding(true)}
-          disabled={!year}
+          disabled={!canCreate}
         >
           <Plus size={20} />
           เพิ่มห้องเรียน
         </Button>
       </div>
+      {!plan.data && (plan.error ? <ErrorState error={plan.error} retry={() => void plan.refetch()} /> : <LoadingState text="กำลังโหลดแพ็กเกจ…" />)}
       {retention.data?.notice && (
         <p className="notice" data-testid="expiry-notice">
           ข้อมูลปี {retention.data.notice.year} จะหมดอายุใน{" "}
@@ -106,6 +110,7 @@ export function ClassesPage() {
           onClick={() => {
             void retention.refetch();
             void classes.refetch();
+            void plan.refetch();
           }}
         >
           รีเฟรช
@@ -120,6 +125,7 @@ export function ClassesPage() {
           retry={() => {
             void retention.refetch();
             void classes.refetch();
+            void plan.refetch();
           }}
         />
       ) : classes.data?.length ? (
@@ -138,12 +144,12 @@ export function ClassesPage() {
           <p className="muted">
             เพิ่มห้องเรียนเพื่อเริ่มจัดการรายชื่อและชิ้นงาน
           </p>
-          <Button onClick={() => setAdding(true)}>เพิ่มห้องเรียน</Button>
+          <Button disabled={!canCreate} onClick={() => setAdding(true)}>เพิ่มห้องเรียน</Button>
         </div>
       )}
       {adding && (
         <ClassForm
-          year={year}
+          year={retention.data!.currentYear}
           term={selection.term}
           onClose={() => setAdding(false)}
         />
