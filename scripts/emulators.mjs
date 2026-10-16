@@ -9,7 +9,7 @@ if (existsSync(resolve(localJava, 'java'))) env.PATH = `${localJava}${delimiter}
 const mode = process.argv[2];
 if (!['start', 'test'].includes(mode)) throw new Error('Expected start or test');
 const args = ['emulators:' + (mode === 'test' ? 'exec' : 'start'), '--project', 'demo-home-work', '--only', 'auth,firestore,functions'];
-if (mode === 'test') args.push('npm run test:integration -w functions && vitest run --config tests/security/vitest.config.mts');
+if (mode === 'test') args.push('npm run test:integration -w functions && ./node_modules/.bin/vitest run --config tests/security/vitest.config.mts');
 const child = spawn(resolve(root, 'node_modules/.bin/firebase'), args, { cwd: root, env, stdio: 'inherit' });
 child.on('error', error => { console.error(error.message); process.exitCode = 1; });
 child.on('exit', (code, signal) => { process.exitCode = code ?? (signal ? 1 : 0); });

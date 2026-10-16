@@ -24,7 +24,9 @@
     "dev:lan": "npm run dev:lan -w web",
     "build:web": "npm run build -w shared && npm run build -w web",
     "test:web": "npm run test -w web",
-    "test:e2e:local": "npm run build -w shared && node scripts/e2e.mjs"
+    "test:e2e:local": "npm run build -w shared && node scripts/e2e.mjs",
+    "plan:admin": "npm run build -w shared && node scripts/plan-admin.mjs",
+    "plan:admin:local": "npm run build -w shared && node scripts/plan-admin.mjs --emulators"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",

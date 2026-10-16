@@ -93,6 +93,7 @@ const env = {
   FIRESTORE_EMULATOR_HOST: "127.0.0.1:8080",
   FIREBASE_AUTH_EMULATOR_HOST: "127.0.0.1:9099",
   GCLOUD_PROJECT: "demo-home-work",
+  FUNCTIONS_DISCOVERY_TIMEOUT: process.env.FUNCTIONS_DISCOVERY_TIMEOUT || "60",
 };
 if (existsSync(resolve(localJava, "java")))
   env.PATH = `${localJava}${delimiter}${env.PATH}`;
@@ -127,9 +128,10 @@ for (const signal of ["SIGINT", "SIGTERM"])
     process.exitCode = 1;
   });
 async function ready(url) {
-  for (let i = 0; i < 90; i++) {
+  const deadline = Date.now() + 180000;
+  while (Date.now() < deadline) {
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (response.ok) return;
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, 500));

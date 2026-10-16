@@ -159,3 +159,6 @@ shared/dist/
 .tools/
 functions/deploy/
 .e2e/
+
+# Local credentials
+.local/

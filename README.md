@@ -252,6 +252,8 @@ npm run test:e2e:local
 
 Integration and browser tests require Java 21 and use a local demo Firebase project. `npm test` runs backend and frontend unit tests. `test:e2e:local` starts the app, a dedicated test Functions bundle and Emulator harness, runs Playwright, then stops its services. The build generates `functions/deploy/` as the Firebase upload source, bundling shared runtime contracts so deployment never depends on a sibling workspace. `build:web` builds the Firebase Hosting artifact in `web/dist/`. Production packaging and prerequisites are documented in [docs/deployment.md](docs/deployment.md).
 
+Teacher plans, current-year classroom limits, code activation, deletion cleanup and the trusted admin terminal commands are documented in [docs/teacher-plans.md](docs/teacher-plans.md). Use `npm run plan:admin -- --help` for command syntax. New classrooms use the current school year only; retained older years remain available for existing classrooms.
+
 Keep localhost setup in `docs/localhost.md`, deployment steps in `docs/deployment.md`, and recovery steps in `docs/recovery.md`. Record required environment-variable names without secret values. Keep generated build output and local credentials out of version control.
 
 For each implementation change, keep tests close to the changed behavior, update this README when stack or placement changes, and update `plan.md` when product behavior changes.

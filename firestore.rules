@@ -9,15 +9,19 @@ service cloud.firestore {
       return thai.year() + 543 - (thai.month() < 5 ? 1 : 0);
     }
     function retained(year) { return year >= currentYear() - 2 && year <= currentYear(); }
+    function active(data) { return data.get('status', 'active') == 'active'; }
     function validClass(uid, cid) {
-      return owner(uid) && retained(get(/databases/$(database)/documents/teachers/$(uid)/classes/$(cid)).data.year);
+      let classroom = get(/databases/$(database)/documents/teachers/$(uid)/classes/$(cid)).data;
+      return owner(uid) && retained(classroom.year) && active(classroom);
     }
     match /teachers/{uid} {
       allow read: if owner(uid);
       allow write: if false;
+      match /subscription/{id} { allow read: if owner(uid); allow write: if false; }
+      match /classroomUsage/{id} { allow read: if owner(uid); allow write: if false; }
       match /subjects/{id} { allow read: if owner(uid); allow write: if false; }
       match /classes/{cid} {
-        allow read: if owner(uid) && retained(resource.data.year);
+        allow read: if owner(uid) && retained(resource.data.year) && active(resource.data);
         allow write: if false;
         match /students/{id} { allow read: if validClass(uid, cid); allow write: if false; }
         match /tasks/{id} { allow read: if validClass(uid, cid); allow write: if false; }

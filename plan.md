@@ -96,13 +96,13 @@ One class means one school year, term, subject, and group under one teacher.
 
 For a new class:
 
-1. Use the chosen school year and term.
+1. Use the current school year and chosen term. Older-year filters are for opening existing classes only.
 2. Choose a saved subject or enter a new subject name.
 3. Enter the group name.
 4. Check that the same subject and group do not already exist in that year and term.
-5. Save and open the class.
+5. Check the teacher's effective plan and shared yearly classroom usage, then save and open the class. See [model-plan.md](model-plan.md) for plan limits and code activation.
 
-In the first version, do not allow changes to a class's year, term, subject, or group after it is made. Do not add class delete or move-student actions.
+Do not allow changes to a class's year, term, subject, or group after it is made. Teachers can delete a class by typing its displayed name; access stops and usage is returned immediately, followed by retriable background cleanup as specified in [model-plan.md](model-plan.md). Do not add move-student actions.
 
 Each class has three tabs: **Summary**, **Tasks**, and **Students**. Open **Summary** first.
 
@@ -562,10 +562,10 @@ Fetch fresh data when:
 - For example, on May 1, 2570, keep years 2568–2570 and expire year 2567.
 - Show an in-app notice 30 days before a school year's data expires.
 - Do not use the year selected by a teacher to decide the current year or expiry.
-- Allow class creation and data changes only within the retained three-year period.
+- Allow class creation only in the current school year. Data changes to existing active classes remain available within the retained three-year period.
 - At expiry, block access and writes for that year and remove its classes, students, tasks, work, QR records, request results, and audit history.
 - Run cleanup as a backend job that can safely resume after failure. Removing a class document alone must not leave its child records behind.
-- This automatic expiry is separate from a teacher deleting a class. The first version still has no manual class-delete action.
+- Automatic expiry and manual class deletion share the same cleanup process and must never return the same place twice. All plans, including Level 3, retain the same three-school-year data policy.
 - Teacher account data and reusable subject names are separate from expired class data.
 
 ## 14. Audit, Backup, and Restore
