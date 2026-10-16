@@ -131,7 +131,7 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
     const background = await context.newPage(); await background.goto('about:blank'); await background.bringToFront(); await page.bringToFront();
     await expect(page.getByTestId('camera-state')).toHaveAttribute('data-state', 'ready');
     await expect(page.getByTestId('work-status')).toHaveValue('late-2');
-    await page.getByTestId('nav-home').click(); await page.getByTestId('scan-work').click();
+    await page.getByTestId('brand-home').click(); await page.getByTestId('scan-work').click();
     await expect(page.getByTestId('work-status')).toHaveValue('on-time');
   });
 
@@ -187,7 +187,7 @@ test.describe('P1 release flows', { tag: '@P1' }, () => {
       await b.classTab('summary'); await b.editWork('ส่งสายระดับ 1');
       await expect(other.getByTestId('save-result')).toHaveAttribute('data-state', 'saved');
       if (event === 'open') await page.reload();
-      if (event === 'return-page') { await page.getByTestId('nav-home').click(); await app.classTab('summary'); }
+      if (event === 'return-page') { await page.getByTestId('brand-home').click(); await app.classTab('summary'); }
       if (event === 'foreground') {
         await other.bringToFront(); await page.bringToFront();
         // Headless Chrome keeps both documents visible/focused and emits no focus

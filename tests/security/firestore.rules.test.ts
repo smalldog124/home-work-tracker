@@ -17,7 +17,7 @@ beforeEach(async () => {
   await env.withSecurityRulesDisabled(async context => {
     const db = context.firestore();
     for (const [id, y] of [['current', year], ['old', year - 3], ['future', year + 1]] as const) {
-      await setDoc(doc(db, `teachers/a/classes/${id}`), { ownerId: 'a', year: y, term: 1 });
+      await setDoc(doc(db, `teachers/a/classes/${id}`), { ownerId: 'a', year: y, term: 1, status: 'active' });
       for (const name of ['students', 'tasks', 'work', 'workVersions']) await setDoc(doc(db, `teachers/a/classes/${id}/${name}/one`), { name: 'ส่วนตัว' });
     }
     await setDoc(doc(db, 'teachers/a/subjects/one'), { name: 'คณิต' });
@@ -29,7 +29,7 @@ it('owner can read own retained classes, children and subjects', async () => {
   for (const path of ['teachers/a/classes/current', 'teachers/a/classes/current/students/one', 'teachers/a/classes/current/tasks/one', 'teachers/a/classes/current/work/one', 'teachers/a/subjects/one']) await assertSucceeds(getDoc(doc(db(), path)));
 });
 it('filtered year/term queries work and unrestricted class queries fail', async () => {
-  await assertSucceeds(getDocs(query(collection(db(), 'teachers/a/classes'), where('year', '==', year), where('term', '==', 1))));
+  await assertSucceeds(getDocs(query(collection(db(), 'teachers/a/classes'), where('year', '==', year), where('term', '==', 1), where('status', '==', 'active'))));
   await assertFails(getDocs(collection(db(), 'teachers/a/classes')));
 });
 it('anonymous, other teacher and non-Google sessions cannot read', async () => {
@@ -66,6 +66,7 @@ it('teachers can read only their own plan and yearly usage', async () => {
 it.each([
   'teachers/a/subscription/current', 'teachers/a/classroomUsage/2569',
   'teachers/a/planEvents/event', 'teachers/a/planRequests/request',
+  'teachers/a/classDeletionRequests/request',
   'planCodes/hash', 'classroomDeletionJobs/job',
 ])('browser cannot create, edit or delete protected plan record %s', async path => {
   await env.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), path), { secret: 'server-only' }));
@@ -74,7 +75,7 @@ it.each([
   await assertFails(deleteDoc(doc(db(), path)));
 });
 
-it.each(['planCodes/hash', 'classroomDeletionJobs/job', 'teachers/a/planRequests/request'])('%s is unreadable even by the target teacher', async path => {
+it.each(['planCodes/hash', 'classroomDeletionJobs/job', 'teachers/a/planRequests/request', 'teachers/a/classDeletionRequests/request'])('%s is unreadable even by the target teacher', async path => {
   await env.withSecurityRulesDisabled(async context => setDoc(doc(context.firestore(), path), { teacherUid: 'a', secret: 'server-only' }));
   for (const client of [db(), db('b'), env.unauthenticatedContext().firestore()]) await assertFails(getDoc(doc(client, path)));
 });
@@ -101,4 +102,14 @@ it('active-only classroom queries hide deleting classrooms', async () => {
   });
   const result = await assertSucceeds(getDocs(query(collection(db(), 'teachers/a/classes'), where('year', '==', year), where('term', '==', 1), where('status', '==', 'active'))));
   expect(result.docs.map(doc => doc.id)).toEqual(['current']);
+});
+
+it('a missing classroom status is treated as active for direct access', async () => {
+  await env.withSecurityRulesDisabled(async context => {
+    const ref = doc(context.firestore(), 'teachers/a/classes/legacy');
+    await setDoc(ref, { ownerId: 'a', year, term: 1 });
+    await setDoc(doc(context.firestore(), `${ref.path}/students/one`), { name: 'เดิม' });
+  });
+  await assertSucceeds(getDoc(doc(db(), 'teachers/a/classes/legacy')));
+  await assertSucceeds(getDoc(doc(db(), 'teachers/a/classes/legacy/students/one')));
 });

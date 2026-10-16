@@ -130,6 +130,7 @@ async function seed(data: Seed) {
     writes.push(() =>
       db.doc(`teachers/${c.ownerId}/classes/${c.id}`).set({
         ...c,
+        status: "active",
         ...expiry(c.year),
         subjectId: hash(c.subject),
         version: 1,
