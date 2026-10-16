@@ -95,7 +95,7 @@ export function TaskForm({
             ยกเลิก
           </Button>
           <Button data-testid="save-task" disabled={busy}>
-            {busy ? "กำลังบันทึก…" : "เพิ่ม"}
+            {busy ? "กำลังบันทึก…" : "บันทึก"}
           </Button>
         </div>
       </form>

@@ -67,8 +67,9 @@ export function TasksTab({
           เพิ่มชิ้นงาน
         </Button>
       </div>
-      <p className="muted">
-        เรียงตามลำดับที่สร้าง การสแกนปกติจะบันทึกลงชิ้นงานล่าสุดเสมอ
+      <p className="caption">
+        การสแกนจะบันทึกลงชิ้นงานล่าสุดเสมอ -
+        ลบชิ้นงานได้เมื่อไม่มีรายการส่งงานปัจจุบันเหลืออยู่
       </p>
       {tasks.length ? (
         <div className="task-list">
@@ -122,9 +123,6 @@ export function TasksTab({
           <Button onClick={() => setEditing("new")}>เพิ่มชิ้นงาน</Button>
         </div>
       )}
-      <p className="caption">
-        ลบชิ้นงานได้เมื่อไม่มีรายการส่งงานปัจจุบันเหลืออยู่
-      </p>
       {editing && (
         <TaskForm
           classId={classroom.id}
