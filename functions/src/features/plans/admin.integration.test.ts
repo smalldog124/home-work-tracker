@@ -1,5 +1,5 @@
 import { getAuth } from 'firebase-admin/auth';
-import { beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { testContext } from '../../lib/test-context';
 import { hash } from '../../lib/records';
 import { createClass } from '../classes/service';
@@ -7,12 +7,14 @@ import { randomUUID } from 'node:crypto';
 // Trusted admin operations used by the future terminal adapter, never browser callables.
 import { findTeacher, createPlanCode, listPlanCodes, cancelPlanCode, getPlanHistory } from './admin';
 import { previewPlanCode, redeemPlanCode } from './service';
+import * as codes from './code';
 
 const { ctx, app, clear, setNow } = testContext();
 const uid = 'plan-admin-teacher';
 const email = 'plan-admin-teacher@example.test';
 const actorId = 'trusted-admin@example.test';
 const auth = getAuth(app);
+afterEach(() => vi.restoreAllMocks());
 beforeEach(async () => {
   await clear();
   // Auth admin calls must also remain confined to the local demo Emulator.
@@ -38,7 +40,7 @@ it('cannot issue a code for an email that has never signed in', async () => {
 it('issues a random teacher-bound code with a hash ID and exactly thirty days of validity', async () => {
   const issued = await createPlanCode(ctx, actorId, { email, planId: 'level2' });
   expect(issued).toMatchObject({ teacherUid: uid, planId: 'level2', expiresAt: '2026-11-09T05:00:00.000Z', code: expect.any(String) });
-  expect(issued.code.length).toBeGreaterThanOrEqual(32);
+  expect(issued.code).toMatch(/^(?=.*[A-Z])(?=.*[0-9])[A-Z0-9]{5}$/);
   expect(issued.codeId).toBe(hash(issued.code));
   const stored = (await ctx.db.doc(`planCodes/${issued.codeId}`).get()).data()!;
   expect(stored).toMatchObject({ teacherUid: uid, planId: 'level2', status: 'unused', createdBy: actorId, usedAt: null, usedBy: null });
@@ -59,6 +61,24 @@ it('two issued codes differ, and listings never expose either full code', async 
   expect(listed.map((code: { codeId: string }) => code.codeId)).toEqual([second.codeId, first.codeId]);
   expect(JSON.stringify(listed)).not.toContain(first.code);
   expect(JSON.stringify(listed)).not.toContain(second.code);
+});
+
+it('retries a duplicate code without overwriting its original owner or plan', async () => {
+  const generator = vi.spyOn(codes, 'generatePlanCode');
+  generator.mockReturnValueOnce('A7K2P').mockReturnValueOnce('A7K2P').mockReturnValueOnce('B8L3Q');
+  const first = await createPlanCode(ctx, actorId, { email, planId: 'level1' });
+  const second = await createPlanCode(ctx, actorId, { email, planId: 'level2' });
+  expect(first.code).toBe('A7K2P');
+  expect(second.code).toBe('B8L3Q');
+  expect((await ctx.db.doc(`planCodes/${first.codeId}`).get()).data()?.planId).toBe('level1');
+  expect((await ctx.db.collection('planCodes').get()).size).toBe(2);
+});
+
+it('previews and redeems a short code with lowercase and surrounding spaces', async () => {
+  const issued = await createPlanCode(ctx, actorId, { email, planId: 'level1' });
+  const code = ` ${issued.code.toLowerCase()} `;
+  const preview = await previewPlanCode(ctx, uid, { code });
+  await expect(redeemPlanCode(ctx, uid, { code, requestId: randomUUID(), previewToken: preview.previewToken })).resolves.toMatchObject({ planId: 'level1' });
 });
 
 it('list shows an unused code as expired at the exact expiry time', async () => {

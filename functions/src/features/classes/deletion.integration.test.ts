@@ -109,6 +109,17 @@ it('the same classroom identity stays blocked until cleanup finishes', async () 
   expect((await usage().get()).data()?.classroomCount).toBe(1);
 });
 
+it('a completed deletion retry cannot delete a replacement with the same classroom ID', async () => {
+  const { klass } = await classroom();
+  const request = deletion(klass.classId);
+  const original = await deleteClass(ctx, uid, request);
+  await processClassroomDeletionJobs(ctx);
+  await createClass(ctx, uid, createInput());
+  expect(await deleteClass(ctx, uid, request)).toEqual(original);
+  expect((await classes().doc(klass.classId).get()).data()?.status).toBe('active');
+  expect((await usage().get()).data()?.classroomCount).toBe(1);
+});
+
 it('cleanup removes every linked record while retaining another classroom and shared subjects', async () => {
   const { klass } = await classroom();
   const other = await createClass(ctx, uid, { ...createInput(), group: 'ม.2' });
@@ -134,7 +145,10 @@ it('a failed external delete is retried without returning the place twice', asyn
   const { klass } = await classroom();
   await deleteClass(ctx, uid, deletion(klass.classId));
   // Fault injection at the Firestore boundary; the worker and job storage remain real.
-  const fault = vi.spyOn(ctx.db, 'recursiveDelete').mockRejectedValueOnce(new Error('temporary Firestore failure'));
+  const runTransaction = ctx.db.runTransaction.bind(ctx.db);
+  const fault = vi.spyOn(ctx.db, 'runTransaction')
+    .mockImplementationOnce(runTransaction) // Claim succeeds; the first deletion page fails.
+    .mockRejectedValueOnce(new Error('temporary Firestore failure'));
   try { await processClassroomDeletionJobs(ctx); } finally { fault.mockRestore(); }
   const job = (await jobs().get()).docs[0].data();
   expect(job).toMatchObject({ status: 'pending', attempts: 1 });

@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import type { Context } from './firebase-admin';
 import { teacherRef } from './records';
 import { fail } from './errors';
-export const rateFor = (action: string) => action === 'importStudents' ? 6 : ['saveWork', 'savePastWork', 'getRequestResult', 'resolveQr'].includes(action) ? 120 : 30;
+export const rateFor = (action: string) => ['importStudents', 'previewPlanCode', 'redeemPlanCode'].includes(action) ? 6 : ['saveWork', 'savePastWork', 'getRequestResult', 'resolveQr'].includes(action) ? 120 : 30;
 export async function rateLimit(ctx: Context, uid: string, action: string) {
   const ref = teacherRef(ctx, uid).collection('rateLimits').doc(action);
   await ctx.db.runTransaction(async tx => {

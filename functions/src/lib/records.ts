@@ -19,6 +19,7 @@ export async function readClass(tx: Transaction, ctx: Context, uid: string, id: 
   const snap = await tx.get(ref);
   if (!snap.exists || snap.data()!.ownerId !== uid) fail('permission-denied', 'ไม่สามารถเข้าถึงห้องเรียนนี้', 'CLASS_UNAVAILABLE');
   const record = snap.data() as ClassRecord;
+  if (record.status === 'deleting') fail('failed-precondition', 'ห้องเรียนนี้กำลังลบข้อมูล ไม่สามารถใช้งานได้', 'CLASS_DELETING');
   assertRetained(record.year, ctx.now());
   return { ref, record };
 }

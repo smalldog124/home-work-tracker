@@ -1,8 +1,9 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { Timestamp } from 'firebase-admin/firestore';
 import { beforeEach, expect, it } from 'vitest';
 import { testContext } from '../../lib/test-context';
 import { hash } from '../../lib/records';
+import { generatePlanCode } from './code';
 import { expireSchoolYears } from '../../jobs/expire-school-years';
 // Proposed public service contract for model-plan.md; production is intentionally absent.
 import { getPlanSummary, previewPlanCode, redeemPlanCode } from './service';
@@ -19,7 +20,7 @@ async function seedPlan(planId = 'level1', expiresAt = '2027-01-31T17:30:00.000Z
   await planRef().set({ planId, startedAt: stamp('2026-01-01T05:00:00.000Z'), expiresAt: stamp(expiresAt), lastCodeId: 'previous', version: 1, updatedAt: Timestamp.fromDate(ctx.now()) });
 }
 async function seedCode(planId = 'level1', overrides: Record<string, unknown> = {}) {
-  const code = randomBytes(32).toString('base64url');
+  const code = generatePlanCode();
   const ref = ctx.db.doc(`planCodes/${hash(code)}`);
   await ref.set({ teacherUid: uid, planId, status: 'unused', createdAt: Timestamp.fromDate(ctx.now()), expiresAt: stamp('2026-11-09T05:00:00.000Z'), createdBy: 'admin@example.test', usedAt: null, usedBy: null, cancelledAt: null, cancelledBy: null, resultPlanExpiresAt: null, ...overrides });
   return { code, ref };
@@ -139,7 +140,7 @@ it.each([
 });
 
 it('an unknown code is rejected without writing a plan or result', async () => {
-  await expect(previewPlanCode(ctx, uid, { code: randomBytes(32).toString('base64url') })).rejects.toMatchObject({ code: 'not-found' });
+  await expect(previewPlanCode(ctx, uid, { code: generatePlanCode() })).rejects.toMatchObject({ code: 'not-found' });
   expect((await requests().get()).empty).toBe(true);
   expect((await planRef().get()).exists).toBe(false);
 });

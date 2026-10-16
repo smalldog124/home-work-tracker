@@ -6,3 +6,6 @@ export { createTaskAction as createTask, renameTaskAction as renameTask, deleteT
 export { saveWorkAction as saveWork, savePastWorkAction as savePastWork, changeWorkStatusAction as changeWorkStatus, getWorkAction as getWork, getRequestResultAction as getRequestResult } from './features/work/actions';
 export { resolveQrAction as resolveQr, getQrDataAction as getQrData } from './features/qr/actions';
 export { expireSchoolYearsJob as expireSchoolYears } from './jobs/expire-school-years';
+export { deleteClassAction as deleteClass } from './features/classes/actions';
+export { getPlanSummaryAction as getPlanSummary, previewPlanCodeAction as previewPlanCode, redeemPlanCodeAction as redeemPlanCode } from './features/plans/actions';
+export { classroomDeletionJob as processClassroomDeletionJobs } from './jobs/classroom-deletion';

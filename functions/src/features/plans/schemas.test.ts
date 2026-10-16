@@ -17,7 +17,7 @@ it('defines ranks and classroom limits in one shared contract', () => {
   });
 });
 
-const code = 'A-long-random-activation-code-with-at-least-32-characters';
+const code = 'A7K2P';
 const redemption = { requestId: 'c0f1ff83-5707-42e2-a79c-5747a274f26f', code, previewToken: 'server-issued-confirmation-token' };
 
 it('accepts a preview without allowing the client to choose its target plan', () => {
@@ -25,7 +25,7 @@ it('accepts a preview without allowing the client to choose its target plan', ()
   expect(previewPlanCodeSchema.safeParse({ code, planId: 'level3' }).success).toBe(false);
 });
 
-it.each(['', ' ', null, 123])('rejects invalid code input %j', code => {
+it.each(['', ' ', null, 123, 'A1B2', 'A1B2C3', 'ABCDE', '12345', 'A1-2C', 'ก1B2C'])('rejects invalid code input %j', code => {
   expect(previewPlanCodeSchema.safeParse({ code }).success).toBe(false);
 });
 
@@ -59,4 +59,9 @@ it('delete requires the typed classroom name and rejects forged ownership', () =
   expect(deleteClassSchema.parse(input)).toEqual(input);
   expect(deleteClassSchema.safeParse({ ...input, confirmationName: '' }).success).toBe(false);
   expect(deleteClassSchema.safeParse({ ...input, ownerId: 'victim' }).success).toBe(false);
+});
+
+it('normalizes lowercase and surrounding whitespace for preview and redemption', () => {
+  expect(previewPlanCodeSchema.parse({ code: ' a7k2p ' })).toEqual({ code });
+  expect(redeemPlanCodeSchema.parse({ ...redemption, code: ' a7k2p ' })).toEqual(redemption);
 });
