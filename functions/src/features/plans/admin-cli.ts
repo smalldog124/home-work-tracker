@@ -34,7 +34,8 @@ export async function runAdminCli(args: string[], repoRoot: string) {
   // Emulator metadata is not a Google credential. Do not pass it to ADC.
   if (emulators) delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
   const app = initializeApp(emulators ? { projectId } : { projectId, credential: cert(account) }, 'plan-admin');
-  const ctx = { db: getFirestore(app), now: () => new Date(), auth: getAuth(app) };
+  const databaseId = emulators ? '(default)' : process.env.FIRESTORE_DATABASE_ID?.trim() || '(default)';
+  const ctx = { db: getFirestore(app, databaseId), now: () => new Date(), auth: getAuth(app) };
   let email = flags.get('--email');
   const codeId = flags.get('--code-id');
   if (command === 'cancel') {
@@ -45,7 +46,7 @@ export async function runAdminCli(args: string[], repoRoot: string) {
   }
   if (!email) throw new Error('Provide --email for an existing teacher');
   const teacher = await findTeacher(ctx, { email });
-  console.log(JSON.stringify({ projectId, actorId, emulators, teacher }, null, 2));
+  console.log(JSON.stringify({ projectId, databaseId, actorId, emulators, teacher }, null, 2));
   if (command === 'find') return;
   if (command === 'list') { console.log(JSON.stringify(await listPlanCodes(ctx, { email }), null, 2)); return; }
   if (command === 'history') { console.log(JSON.stringify(await getPlanHistory(ctx, { email }), null, 2)); return; }

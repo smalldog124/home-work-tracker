@@ -4,7 +4,6 @@ import { PDFDocument, PDFDict, PDFName } from "pdf-lib";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
 import { makeQrPdf, makeQrPng } from "./pdf";
-const nativeFetch = globalThis.fetch;
 it("paginates A4 at 20 cards and embeds Sarabun with Thai shaping", async () => {
   const font = new Uint8Array(
     await readFile(
@@ -46,14 +45,18 @@ it("paginates A4 at 20 cards and embeds Sarabun with Thai shaping", async () => 
     vi.unstubAllGlobals();
   }
 }, 20000);
-it("produces an individual QR that decodes to the original opaque payload", async () => {
-  vi.stubGlobal("fetch", nativeFetch);
+it("produces a decodable individual QR without fetching a data URL blocked by CSP", async () => {
+  const fetchBlockedByCsp = vi.fn(() => {
+    throw new TypeError("Refused to connect because it violates connect-src");
+  });
+  vi.stubGlobal("fetch", fetchBlockedByCsp);
   try {
     const payload = `hw1.eyJ0ZXN0Ijp0cnVlfQ.${"b".repeat(64)}`;
     const png = PNG.sync.read(Buffer.from(await makeQrPng(payload)));
     expect(
       jsQR(new Uint8ClampedArray(png.data), png.width, png.height)?.data,
     ).toBe(payload);
+    expect(fetchBlockedByCsp).not.toHaveBeenCalled();
   } finally {
     vi.unstubAllGlobals();
   }

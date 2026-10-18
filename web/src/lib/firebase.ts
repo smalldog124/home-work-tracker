@@ -37,10 +37,14 @@ const app = initializeApp({
   appId: env.VITE_FIREBASE_APP_ID || "demo-app",
 });
 export const auth = getAuth(app);
-export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache(),
-  ...(lanEmulators ? { host: location.host, ssl: true } : {}),
-});
+export const db = initializeFirestore(
+  app,
+  {
+    localCache: memoryLocalCache(),
+    ...(lanEmulators ? { host: location.host, ssl: true } : {}),
+  },
+  useEmulators ? "(default)" : env.VITE_FIRESTORE_DATABASE_ID?.trim() || "(default)",
+);
 export const functions = getFunctions(
   app,
   lanEmulators ? `${location.origin}/__emulator/functions` : "asia-southeast1",

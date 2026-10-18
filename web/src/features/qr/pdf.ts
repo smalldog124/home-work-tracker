@@ -109,5 +109,6 @@ export async function makeQrPng(payload: string): Promise<Uint8Array> {
     margin: 4,
     errorCorrectionLevel: "M",
   });
-  return new Uint8Array(await (await fetch(data)).arrayBuffer());
+  const base64 = data.slice(data.indexOf(",") + 1);
+  return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
 }
